@@ -1,7 +1,6 @@
 # Session log 6: dead-code sweep, simplification proposals and docstrings
 
-Representative excerpts from the Claude Code session that produced the
-`worktree-cleanup-docstrings` PR. User prompts are quoted verbatim. Agent responses and actions are
+Representative excerpts from the Claude Code session that produced PR #14. User prompts are quoted verbatim. Agent responses and actions are
 condensed, and tool output is trimmed to the relevant lines.
 
 - **Agent:** Claude Code (Claude Opus 5.5), running as a background job in a git worktree
@@ -93,7 +92,7 @@ frontend has no tests.
 
 ## 6. Proposals (not applied)
 
-The agent left these for the user to decide. They're listed in the PR description, roughly by value:
+The agent left these for the user to decide. They're listed in the PR #14 description, roughly by value:
 
 1. Build the `/login?expired=1&next=…` URL in one helper. It's built by hand in 4 places.
 2. Keep one `SESSION_COOKIE` constant. `middleware.ts` duplicates it with a "kept in sync" comment.

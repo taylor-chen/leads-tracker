@@ -1,0 +1,42 @@
+export type LeadState = "PENDING" | "REACHED_OUT";
+
+export const LEAD_STATES: LeadState[] = ["PENDING", "REACHED_OUT"];
+
+export const LEAD_STATE_LABELS: Record<LeadState, string> = {
+  PENDING: "Pending",
+  REACHED_OUT: "Reached out",
+};
+
+export interface UserSummary {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
+export interface Lead {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  resume: {
+    filename: string;
+    content_type: string;
+    size_bytes: number;
+  };
+  state: LeadState;
+  reached_out_at: string | null;
+  reached_out_by: UserSummary | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadPage {
+  items: Lead[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export function isLeadState(value: unknown): value is LeadState {
+  return typeof value === "string" && (LEAD_STATES as string[]).includes(value);
+}

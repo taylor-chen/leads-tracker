@@ -3,12 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { loginPath } from "@/lib/auth";
 import { backendFetch, errorMessage } from "@/lib/backend";
+import type { ActionResult } from "@/lib/types";
 
-export interface ActionResult {
-  error?: string;
-}
-
+/** Server action: move a lead to REACHED_OUT and refresh the pages that show it. */
 export async function markReachedOut(leadId: string): Promise<ActionResult> {
   const res = await backendFetch(`/api/v1/leads/${encodeURIComponent(leadId)}`, {
     method: "PATCH",
@@ -17,7 +16,7 @@ export async function markReachedOut(leadId: string): Promise<ActionResult> {
   });
 
   if (res.status === 401) {
-    redirect(`/login?expired=1&next=${encodeURIComponent(`/leads/${leadId}`)}`);
+    redirect(loginPath(`/leads/${leadId}`, { expired: true }));
   }
   if (!res.ok) {
     return { error: await errorMessage(res) };

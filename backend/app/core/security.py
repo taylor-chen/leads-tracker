@@ -9,7 +9,10 @@ from app.core.config import Settings
 
 
 class InvalidTokenError(Exception):
-    pass
+    """The token is malformed, badly signed, expired or missing claims.
+
+    Internal to the auth layer; `AuthService` turns it into an `AuthenticationError`.
+    """
 
 
 def hash_password(password: str) -> str:
@@ -17,6 +20,7 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, hashed: str) -> bool:
+    """Check `password` against a bcrypt hash. A malformed hash counts as a mismatch."""
     try:
         return bcrypt.checkpw(password.encode(), hashed.encode())
     except ValueError:
@@ -25,6 +29,8 @@ def verify_password(password: str, hashed: str) -> bool:
 
 @dataclass(frozen=True)
 class TokenClaims:
+    """The claims of a verified access token that the app relies on."""
+
     subject: str
     jti: str
     expires_at: datetime
@@ -51,6 +57,11 @@ def create_access_token(subject: str, version: int, settings: Settings) -> tuple
 
 
 def decode_access_token(token: str, settings: Settings) -> TokenClaims:
+    """Verify `token`'s signature and expiry and return its claims.
+
+    Only checks the token itself; revocation and `token_version` are checked by
+    `AuthService`. Raises `InvalidTokenError` if anything is wrong.
+    """
     try:
         payload = jwt.decode(
             token,

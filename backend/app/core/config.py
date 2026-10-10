@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "Leads Tracker API"
-    environment: Literal["local", "test", "staging", "production"] = "local"
     log_level: str = "INFO"
 
     database_url: str = "sqlite:///./leads.db"

@@ -52,6 +52,7 @@ BearerToken = Annotated[str, Depends(get_bearer_token)]
 def get_current_user(
     auth: Annotated[AuthService, Depends(get_auth_service)], token: BearerToken
 ) -> User:
+    """Resolve the bearer token to its user. Add `CurrentUser` to protect a route."""
     return auth.user_from_token(token)
 
 

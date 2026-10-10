@@ -7,6 +7,8 @@ from app.core.errors import PayloadTooLargeError, ValidationError
 
 @dataclass(frozen=True)
 class ResumeFormat:
+    """An accepted resume format: its content type and the byte signatures that identify it."""
+
     content_type: str
     magic: tuple[bytes, ...]
 
@@ -25,6 +27,8 @@ ALLOWED_RESUME_FORMATS: dict[str, ResumeFormat] = {
 
 @dataclass(frozen=True)
 class ValidatedResume:
+    """A resume that passed validation. `filename` is the sanitized original name."""
+
     filename: str
     suffix: str
     content_type: str

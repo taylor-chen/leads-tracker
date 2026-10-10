@@ -1,12 +1,15 @@
 import uuid
 from datetime import datetime
 
+from fastapi import UploadFile
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.lead import LeadState
 
 
 class LeadCreate(BaseModel):
+    """Text fields of the public lead form, trimmed and with the email lowercased."""
+
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
     email: EmailStr
@@ -25,7 +28,15 @@ class LeadCreate(BaseModel):
         return value.strip().lower()
 
 
+class LeadSubmission(LeadCreate):
+    """The public lead form as posted (multipart): the text fields plus the resume file."""
+
+    resume: UploadFile = Field(description="PDF, DOC or DOCX, up to 5 MB")
+
+
 class LeadUpdate(BaseModel):
+    """Body of `PATCH /leads/{id}`. Only the state can change."""
+
     state: LeadState
 
 
@@ -39,12 +50,16 @@ class LeadSubmitted(BaseModel):
 
 
 class ResumeInfo(BaseModel):
+    """Metadata about a lead's uploaded resume."""
+
     filename: str
     content_type: str
     size_bytes: int
 
 
 class UserSummary(BaseModel):
+    """The attorney who acted on a lead, embedded in `LeadRead`."""
+
     id: uuid.UUID
     full_name: str
     email: str
@@ -53,6 +68,8 @@ class UserSummary(BaseModel):
 
 
 class LeadRead(BaseModel):
+    """A lead as shown to signed-in attorneys."""
+
     id: uuid.UUID
     first_name: str
     last_name: str
@@ -66,6 +83,7 @@ class LeadRead(BaseModel):
 
     @classmethod
     def from_model(cls, lead) -> "LeadRead":
+        """Build from a `Lead` row, nesting the flat `resume_*` columns under `resume`."""
         return cls(
             id=lead.id,
             first_name=lead.first_name,
@@ -87,6 +105,8 @@ class LeadRead(BaseModel):
 
 
 class LeadPage(BaseModel):
+    """One page of `GET /leads` results."""
+
     items: list[LeadRead]
     total: int
     page: int

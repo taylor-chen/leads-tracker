@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Kept in sync with SESSION_COOKIE in lib/session.ts (middleware can't import server-only modules).
-const SESSION_COOKIE = "leads_session";
+import { SESSION_COOKIE, loginPath } from "@/lib/auth";
 
 /**
  * Cheap gate for internal pages: no cookie → login. Token validity is still
@@ -9,9 +8,8 @@ const SESSION_COOKIE = "leads_session";
  */
 export function middleware(request: NextRequest) {
   if (!request.cookies.get(SESSION_COOKIE)) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
-    return NextResponse.redirect(loginUrl);
+    const next = request.nextUrl.pathname + request.nextUrl.search;
+    return NextResponse.redirect(new URL(loginPath(next), request.url));
   }
   return NextResponse.next();
 }

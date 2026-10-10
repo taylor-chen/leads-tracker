@@ -20,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class LeadService:
+    """Lead intake and review: creation with resume upload, listing and state changes."""
+
     def __init__(self, db: Session, storage: StorageBackend, settings: Settings) -> None:
         self.db = db
         self.storage = storage
@@ -27,6 +29,11 @@ class LeadService:
         self.leads = LeadRepository(db)
 
     def create_lead(self, data: LeadCreate, resume: BinaryIO, resume_filename: str | None) -> Lead:
+        """Validate and store the resume, then save a PENDING lead.
+
+        The file is written before the row; if the DB write fails the file is deleted.
+        Raises `ValidationError` or `PayloadTooLargeError` for a bad resume.
+        """
         validated = validate_resume(
             resume, resume_filename, max_bytes=self.settings.max_resume_bytes
         )
@@ -55,7 +62,9 @@ class LeadService:
     def list_leads(
         self, *, state: LeadState | None, page: int, page_size: int
     ) -> tuple[list[Lead], int]:
-        return self.leads.list(state=state, offset=(page - 1) * page_size, limit=page_size)
+        """Return one page (1-based) of leads, newest first, and the total matching `state`."""
+        offset = (page - 1) * page_size
+        return self.leads.list_page(state=state, offset=offset, limit=page_size)
 
     def get_lead(self, lead_id: uuid.UUID) -> Lead:
         lead = self.leads.get(lead_id)
@@ -64,6 +73,11 @@ class LeadService:
         return lead
 
     def update_lead(self, lead_id: uuid.UUID, data: LeadUpdate, actor: User) -> Lead:
+        """Move a lead to `data.state`, recording `actor` when it becomes REACHED_OUT.
+
+        Setting the current state again is a no-op. Raises `InvalidStateTransitionError`
+        for moves not in `LEAD_STATE_TRANSITIONS`.
+        """
         lead = self.get_lead(lead_id)
         if data.state != lead.state:
             if data.state not in LEAD_STATE_TRANSITIONS[lead.state]:
@@ -80,6 +94,7 @@ class LeadService:
         return lead
 
     def resume_path(self, lead: Lead) -> Path:
+        """Return the local path of the lead's resume, or raise `NotFoundError` if it's gone."""
         path = self.storage.path_for(lead.resume_key)
         if not path.exists():
             raise NotFoundError("Resume file not found")

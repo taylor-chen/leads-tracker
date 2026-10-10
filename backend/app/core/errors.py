@@ -15,6 +15,8 @@ class NotFoundError(DomainError):
 
 
 class ValidationError(DomainError):
+    """Input failed a business rule (not to be confused with pydantic's ValidationError)."""
+
     status_code = 422
     code = "validation_error"
 
@@ -25,11 +27,15 @@ class PayloadTooLargeError(DomainError):
 
 
 class InvalidStateTransitionError(DomainError):
+    """A lead state change not allowed by `LEAD_STATE_TRANSITIONS`."""
+
     status_code = 409
     code = "invalid_state_transition"
 
 
 class AuthenticationError(DomainError):
+    """Missing, invalid, expired or revoked credentials. Sent with `WWW-Authenticate`."""
+
     status_code = 401
     code = "not_authenticated"
 

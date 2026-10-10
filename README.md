@@ -95,6 +95,9 @@ make lint            # ruff (backend) + ESLint (frontend)
 
 The frontend image also type-checks during `next build`, so `make up` fails on type errors.
 
+The same checks run in GitHub Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) on
+every pull request and on pushes to `main`.
+
 ### Without Docker (optional)
 
 ```bash

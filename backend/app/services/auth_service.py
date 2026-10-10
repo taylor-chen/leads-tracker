@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
-from app.core.errors import AuthenticationError, ValidationError
+from app.core.errors import AuthenticationError, InvalidCurrentPasswordError, ValidationError
 from app.core.security import (
     InvalidTokenError,
     TokenClaims,
@@ -23,6 +23,17 @@ from app.repositories.user_repository import UserRepository
 # enumeration via timing). Nothing ever matches it, so it isn't a secret.
 _DUMMY_HASH = hash_password(secrets.token_urlsafe(32))
 
+MIN_PASSWORD_LENGTH = 8
+# bcrypt only uses the first 72 bytes of its input (and newer versions raise past that).
+MAX_PASSWORD_BYTES = 72
+
+
+def validate_password_policy(password: str) -> None:
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise ValidationError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
+    if len(password.encode()) > MAX_PASSWORD_BYTES:
+        raise ValidationError(f"Password must be at most {MAX_PASSWORD_BYTES} bytes")
+
 
 class AuthService:
     def __init__(self, db: Session, settings: Settings) -> None:
@@ -38,14 +49,25 @@ class AuthService:
             raise AuthenticationError("Invalid email or password")
         if not verify_password(password, user.hashed_password) or not user.is_active:
             raise AuthenticationError("Invalid email or password")
-        return create_access_token(str(user.id), self.settings)
+        return create_access_token(str(user.id), user.token_version, self.settings)
 
     def user_from_token(self, token: str) -> User:
         claims = self._valid_claims(token)
         user = self.users.get(uuid.UUID(claims.subject))
-        if user is None or not user.is_active:
+        if user is None or not user.is_active or claims.version != user.token_version:
             raise AuthenticationError("Invalid or expired token")
         return user
+
+    def change_password(self, user: User, *, current_password: str, new_password: str) -> None:
+        """Replace `user`'s password and invalidate all of their existing tokens."""
+        if not verify_password(current_password, user.hashed_password):
+            raise InvalidCurrentPasswordError("Current password is incorrect")
+        validate_password_policy(new_password)
+        if verify_password(new_password, user.hashed_password):
+            raise ValidationError("New password must be different from the current password")
+        user.hashed_password = hash_password(new_password)
+        user.token_version += 1
+        self.db.commit()
 
     def revoke_token(self, token: str) -> None:
         """Invalidate `token` before it expires (logout). Also prunes expired revocations."""
@@ -65,8 +87,7 @@ class AuthService:
         return claims
 
     def create_user(self, *, email: str, password: str, full_name: str) -> User:
-        if len(password) < 8:
-            raise ValidationError("Password must be at least 8 characters")
+        validate_password_policy(password)
         if self.users.get_by_email(email) is not None:
             raise ValidationError("A user with this email already exists")
         user = self.users.add(

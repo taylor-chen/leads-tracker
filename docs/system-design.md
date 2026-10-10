@@ -63,6 +63,8 @@
 5. Resume download is proxied through `GET /api/leads/{id}/resume` and streamed from the API.
 6. Sign out: `POST /api/auth/logout` (Next.js) → `POST /api/v1/auth/logout` revokes the token, then
    the cookie is cleared (even if the API call fails).
+7. Change password: `/leads/account` → server action → `POST /api/v1/auth/change-password`. On
+   success every session is invalidated, so the cookie is cleared and the user signs in again.
 
 ## 3. Data model
 
@@ -74,9 +76,9 @@ email            varchar unique         first_name           varchar(100)
 hashed_password  varchar (bcrypt)       last_name            varchar(100)
 full_name        varchar                email                varchar(320)  idx
 is_active        bool                   resume_key           varchar  (storage key, server-generated)
-created_at       timestamptz            resume_filename      varchar  (sanitised original name)
-updated_at       timestamptz            resume_content_type  varchar
-                                        resume_size_bytes    int
+token_version    int  (JWT `ver`)       resume_filename      varchar  (sanitised original name)
+created_at       timestamptz            resume_content_type  varchar
+updated_at       timestamptz            resume_size_bytes    int
                                         state                enum lead_state(PENDING, REACHED_OUT) idx
                                         reached_out_at       timestamptz null
                                         reached_out_by_id    uuid FK users.id null
@@ -107,6 +109,7 @@ migration.
 | `POST` | `/auth/login` | public | `{email, password}` → `{access_token, expires_in}` |
 | `POST` | `/auth/logout` | bearer | Revoke the current token. `204` |
 | `GET` | `/auth/me` | bearer | Current user |
+| `POST` | `/auth/change-password` | bearer | `{current_password, new_password}`. Invalidates all of the user's tokens. `204`, `401` wrong current password (`invalid_current_password`), `422` policy |
 | `GET` | `/health` | public | Liveness |
 
 Errors use one envelope: `{"error": {"code": "...", "message": "..."}}`. Status codes: `401` not
@@ -120,6 +123,10 @@ validation error.
 - **Logout:** each JWT carries a random `jti`. Logout stores it in `revoked_tokens` until the token
   would have expired, and every authenticated request checks that table, so a copied token stops
   working once its session signs out. Other sessions of the same user stay signed in.
+- **Password change:** each JWT also carries the user's `token_version` as `ver` (tokens without it
+  count as `0`). Changing the password bumps `users.token_version`, so every token issued before,
+  on any device, is rejected. New passwords must be 8+ characters, at most 72 bytes (bcrypt's
+  limit) and differ from the current one.
 - **Session:** the JWT lives in an `httpOnly` cookie (set `COOKIE_SECURE=true` behind HTTPS).
   `SameSite=Lax` plus the server actions' built-in origin checks mitigate CSRF. `?next=` redirects
   are restricted to relative paths.

@@ -28,16 +28,21 @@ class TokenClaims:
     subject: str
     jti: str
     expires_at: datetime
+    version: int
 
 
-def create_access_token(subject: str, settings: Settings) -> tuple[str, int]:
-    """Return a signed JWT for `subject` and its lifetime in seconds."""
+def create_access_token(subject: str, version: int, settings: Settings) -> tuple[str, int]:
+    """Return a signed JWT for `subject` and its lifetime in seconds.
+
+    `version` is the user's `token_version`; tokens carrying an older version are rejected.
+    """
     expires_in = settings.access_token_expire_minutes * 60
     now = datetime.now(UTC)
     payload = {
         "sub": subject,
         # Unique token id, so a single token can be revoked on logout.
         "jti": secrets.token_urlsafe(16),
+        "ver": version,
         "iat": now,
         "exp": now + timedelta(seconds=expires_in),
     }
@@ -56,8 +61,15 @@ def decode_access_token(token: str, settings: Settings) -> TokenClaims:
     except jwt.PyJWTError as exc:
         raise InvalidTokenError(str(exc)) from exc
     subject, jti = payload["sub"], payload["jti"]
+    # Tokens issued before `ver` existed count as version 0, the column default.
+    version = payload.get("ver", 0)
     if not subject or not jti:
         raise InvalidTokenError("Token is missing required claims")
+    if not isinstance(version, int) or isinstance(version, bool):
+        raise InvalidTokenError("Token has an invalid version claim")
     return TokenClaims(
-        subject=subject, jti=jti, expires_at=datetime.fromtimestamp(payload["exp"], UTC)
+        subject=subject,
+        jti=jti,
+        expires_at=datetime.fromtimestamp(payload["exp"], UTC),
+        version=version,
     )

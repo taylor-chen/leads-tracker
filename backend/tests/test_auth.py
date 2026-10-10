@@ -97,3 +97,89 @@ def test_logout_prunes_expired_revocations(client, attorney, db):
     remaining = db.scalars(select(RevokedToken.jti)).all()
     assert "old" not in remaining
     assert len(remaining) == 1
+
+
+NEW_PASSWORD = "n3w-s3cret-password"
+
+
+def _change_password(client, headers, current=ATTORNEY_PASSWORD, new=NEW_PASSWORD):
+    return client.post(
+        "/api/v1/auth/change-password",
+        headers=headers,
+        json={"current_password": current, "new_password": new},
+    )
+
+
+def test_change_password(client, auth_headers):
+    assert _change_password(client, auth_headers).status_code == 204
+
+    old = client.post(
+        "/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": ATTORNEY_PASSWORD}
+    )
+    assert old.status_code == 401
+    new = client.post(
+        "/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": NEW_PASSWORD}
+    )
+    assert new.status_code == 200
+    headers = {"Authorization": f"Bearer {new.json()['access_token']}"}
+    assert client.get("/api/v1/auth/me", headers=headers).status_code == 200
+
+
+def test_change_password_invalidates_existing_tokens(client, attorney):
+    laptop, phone = _login(client), _login(client)
+
+    assert _change_password(client, laptop).status_code == 204
+
+    for headers in (laptop, phone):
+        assert client.get("/api/v1/auth/me", headers=headers).status_code == 401
+        assert client.get("/api/v1/leads", headers=headers).status_code == 401
+
+
+def test_change_password_wrong_current_password(client, auth_headers):
+    res = _change_password(client, auth_headers, current="not-my-password")
+    assert res.status_code == 401
+    assert res.json()["error"]["code"] == "invalid_current_password"
+    # Nothing changed: the session and the old password still work.
+    assert client.get("/api/v1/auth/me", headers=auth_headers).status_code == 200
+    assert _login(client)
+
+
+def test_change_password_requires_auth(client, attorney):
+    res = _change_password(client, {})
+    assert res.status_code == 401
+    assert res.json()["error"]["code"] == "not_authenticated"
+
+
+def test_change_password_policy(client, auth_headers):
+    for new, message in [
+        ("short", "Password must be at least 8 characters"),
+        ("x" * 73, "Password must be at most 72 bytes"),
+        (ATTORNEY_PASSWORD, "New password must be different from the current password"),
+    ]:
+        res = _change_password(client, auth_headers, new=new)
+        assert res.status_code == 422, new
+        assert res.json()["error"]["message"] == message
+    assert client.get("/api/v1/auth/me", headers=auth_headers).status_code == 200
+
+
+def test_token_with_stale_version_is_rejected(client, attorney, settings):
+    def token(ver):
+        payload = {
+            "sub": str(attorney.id),
+            "jti": f"jti-{ver}",
+            "exp": datetime.now(UTC) + timedelta(minutes=5),
+        }
+        if ver is not None:
+            payload["ver"] = ver
+        encoded = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+        return {"Authorization": f"Bearer {encoded}"}
+
+    # Tokens issued before the `ver` claim existed are treated as version 0.
+    assert client.get("/api/v1/auth/me", headers=token(None)).status_code == 200
+    assert client.get("/api/v1/auth/me", headers=token(0)).status_code == 200
+    assert client.get("/api/v1/auth/me", headers=token(1)).status_code == 401
+    assert client.get("/api/v1/auth/me", headers=token("0")).status_code == 401
+
+    assert _change_password(client, token(0)).status_code == 204
+    assert client.get("/api/v1/auth/me", headers=token(None)).status_code == 401
+    assert client.get("/api/v1/auth/me", headers=token(1)).status_code == 200

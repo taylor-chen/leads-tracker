@@ -32,3 +32,9 @@ class InvalidStateTransitionError(DomainError):
 class AuthenticationError(DomainError):
     status_code = 401
     code = "not_authenticated"
+
+
+class InvalidCurrentPasswordError(AuthenticationError):
+    """Wrong current password on a password change, as opposed to a missing or expired session."""
+
+    code = "invalid_current_password"

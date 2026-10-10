@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, String, Uuid
+from sqlalchemy import Boolean, Integer, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, TimestampMixin
@@ -16,3 +16,6 @@ class User(TimestampMixin, Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(200), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    # Embedded in each access token; bumping it (e.g. on password change) invalidates every
+    # token issued before.
+    token_version: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

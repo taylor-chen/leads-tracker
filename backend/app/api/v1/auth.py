@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Response, status
 
 from app.api.deps import AuthServiceDep, BearerToken, CurrentUser
-from app.schemas.auth import LoginRequest, TokenResponse, UserRead
+from app.schemas.auth import ChangePasswordRequest, LoginRequest, TokenResponse, UserRead
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -22,3 +22,14 @@ def logout(token: BearerToken, auth: AuthServiceDep) -> Response:
 @router.get("/me", response_model=UserRead)
 def me(user: CurrentUser) -> UserRead:
     return UserRead.model_validate(user)
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+def change_password(
+    body: ChangePasswordRequest, user: CurrentUser, auth: AuthServiceDep
+) -> Response:
+    """Change the current user's password. Signs out every session, including this one."""
+    auth.change_password(
+        user, current_password=body.current_password, new_password=body.new_password
+    )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

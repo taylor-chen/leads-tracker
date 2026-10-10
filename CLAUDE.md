@@ -20,3 +20,7 @@ Every session that commits a change must also commit a session log to `session_l
   - be honest about gaps: what wasn't verified, what was blocked, and where the agent pushed back
   - a closing `## Takeaways` section with 2–4 bullets
 - **Redact:** no secrets, tokens, `.env` values or personal data in quoted prompts or output.
+
+## Human notes
+
+Do not modify anything in the `human_notes` directory.

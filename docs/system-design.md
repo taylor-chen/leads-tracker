@@ -61,6 +61,8 @@
 4. "Mark reached out" is a server action → `PATCH /api/v1/leads/{id} {state: REACHED_OUT}` →
    revalidates the page.
 5. Resume download is proxied through `GET /api/leads/{id}/resume` and streamed from the API.
+6. Sign out: `POST /api/auth/logout` (Next.js) → `POST /api/v1/auth/logout` revokes the token, then
+   the cookie is cleared (even if the API call fails).
 
 ## 3. Data model
 
@@ -80,6 +82,12 @@ updated_at       timestamptz            resume_content_type  varchar
                                         reached_out_by_id    uuid FK users.id null
                                         created_at           timestamptz idx
                                         updated_at           timestamptz
+
+revoked_tokens
+──────────────
+jti              varchar PK
+expires_at       timestamptz idx  (rows are pruned once past this)
+revoked_at       timestamptz
 ```
 
 The state machine is data (`LEAD_STATE_TRANSITIONS`): `PENDING → REACHED_OUT`, and `REACHED_OUT`
@@ -97,6 +105,7 @@ migration.
 | `PATCH` | `/leads/{id}` | bearer | Update the lead's state (`{"state": "REACHED_OUT"}`) |
 | `GET` | `/leads/{id}/resume` | bearer | Download the resume |
 | `POST` | `/auth/login` | public | `{email, password}` → `{access_token, expires_in}` |
+| `POST` | `/auth/logout` | bearer | Revoke the current token. `204` |
 | `GET` | `/auth/me` | bearer | Current user |
 | `GET` | `/health` | public | Liveness |
 
@@ -108,6 +117,9 @@ validation error.
 
 - **Auth:** bcrypt password hashes and HS256 JWTs (8 h). Login runs a constant-time-ish dummy check
   for unknown emails. Inactive users are rejected.
+- **Logout:** each JWT carries a random `jti`. Logout stores it in `revoked_tokens` until the token
+  would have expired, and every authenticated request checks that table, so a copied token stops
+  working once its session signs out. Other sessions of the same user stay signed in.
 - **Session:** the JWT lives in an `httpOnly` cookie (set `COOKIE_SECURE=true` behind HTTPS).
   `SameSite=Lax` plus the server actions' built-in origin checks mitigate CSRF. `?next=` redirects
   are restricted to relative paths.

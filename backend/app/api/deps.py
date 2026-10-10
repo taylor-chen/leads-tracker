@@ -38,13 +38,21 @@ def get_auth_service(db: DbDep, settings: SettingsDep) -> AuthService:
 _bearer = HTTPBearer(auto_error=False)
 
 
-def get_current_user(
-    auth: Annotated[AuthService, Depends(get_auth_service)],
+def get_bearer_token(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
-) -> User:
+) -> str:
     if credentials is None:
         raise AuthenticationError("Not authenticated")
-    return auth.user_from_token(credentials.credentials)
+    return credentials.credentials
+
+
+BearerToken = Annotated[str, Depends(get_bearer_token)]
+
+
+def get_current_user(
+    auth: Annotated[AuthService, Depends(get_auth_service)], token: BearerToken
+) -> User:
+    return auth.user_from_token(token)
 
 
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]

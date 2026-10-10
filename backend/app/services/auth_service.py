@@ -7,12 +7,15 @@ from app.core.config import Settings
 from app.core.errors import AuthenticationError, ValidationError
 from app.core.security import (
     InvalidTokenError,
+    TokenClaims,
     create_access_token,
     decode_access_token,
     hash_password,
     verify_password,
 )
+from app.db.base import utcnow
 from app.models.user import User
+from app.repositories.revoked_token_repository import RevokedTokenRepository
 from app.repositories.user_repository import UserRepository
 
 # Hash of a random throwaway value, checked when the email doesn't exist so that
@@ -26,6 +29,7 @@ class AuthService:
         self.db = db
         self.settings = settings
         self.users = UserRepository(db)
+        self.revoked = RevokedTokenRepository(db)
 
     def authenticate(self, email: str, password: str) -> tuple[str, int]:
         user = self.users.get_by_email(email)
@@ -37,14 +41,28 @@ class AuthService:
         return create_access_token(str(user.id), self.settings)
 
     def user_from_token(self, token: str) -> User:
-        try:
-            user_id = uuid.UUID(decode_access_token(token, self.settings))
-        except (InvalidTokenError, ValueError) as exc:
-            raise AuthenticationError("Invalid or expired token") from exc
-        user = self.users.get(user_id)
+        claims = self._valid_claims(token)
+        user = self.users.get(uuid.UUID(claims.subject))
         if user is None or not user.is_active:
             raise AuthenticationError("Invalid or expired token")
         return user
+
+    def revoke_token(self, token: str) -> None:
+        """Invalidate `token` before it expires (logout). Also prunes expired revocations."""
+        claims = self._valid_claims(token)
+        self.revoked.delete_expired(utcnow())
+        self.revoked.add(claims.jti, claims.expires_at)
+        self.db.commit()
+
+    def _valid_claims(self, token: str) -> TokenClaims:
+        try:
+            claims = decode_access_token(token, self.settings)
+            uuid.UUID(claims.subject)
+        except (InvalidTokenError, ValueError) as exc:
+            raise AuthenticationError("Invalid or expired token") from exc
+        if self.revoked.is_revoked(claims.jti):
+            raise AuthenticationError("Invalid or expired token")
+        return claims
 
     def create_user(self, *, email: str, password: str, full_name: str) -> User:
         if len(password) < 8:

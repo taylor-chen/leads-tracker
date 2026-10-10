@@ -1,0 +1,17 @@
+from fastapi import APIRouter
+
+from app.api.deps import AuthServiceDep, CurrentUser
+from app.schemas.auth import LoginRequest, TokenResponse, UserRead
+
+router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+@router.post("/login", response_model=TokenResponse)
+def login(body: LoginRequest, auth: AuthServiceDep) -> TokenResponse:
+    token, expires_in = auth.authenticate(body.email, body.password)
+    return TokenResponse(access_token=token, expires_in=expires_in)
+
+
+@router.get("/me", response_model=UserRead)
+def me(user: CurrentUser) -> UserRead:
+    return UserRead.model_validate(user)

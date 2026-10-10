@@ -1,11 +1,10 @@
-import { NextResponse } from "next/server";
-
 import { SESSION_COOKIE } from "@/lib/auth";
 import { backendFetch } from "@/lib/backend";
+import { redirectToPath } from "@/lib/redirect";
 import { getSessionToken, sessionCookieOptions } from "@/lib/session";
 
 /** Signs out: revokes the API token, clears the cookie and redirects to /login. */
-export async function POST(request: Request) {
+export async function POST() {
   // Revoke the token server-side so a copied token stops working too. The cookie is cleared
   // regardless, so a failed or unreachable API never leaves the user stuck signed in.
   if (await getSessionToken()) {
@@ -20,7 +19,7 @@ export async function POST(request: Request) {
   }
 
   // 303 so the browser follows the redirect with a GET after the form POST.
-  const response = NextResponse.redirect(new URL("/login", request.url), 303);
+  const response = redirectToPath("/login", 303);
   response.cookies.set(SESSION_COOKIE, "", { ...sessionCookieOptions, maxAge: 0 });
   return response;
 }

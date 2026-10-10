@@ -1,4 +1,4 @@
-# Session log 3: security review and first fixes
+# Session log 4: security review and first fixes
 
 Representative excerpts from the Claude Code session that produced the MVP security review, issues
 #8–#11, and PR #12. User prompts are quoted verbatim. Agent responses and actions are condensed, and
@@ -166,6 +166,51 @@ The agent wrote them in the same structure as #2 (current behaviour, proposed ch
 #8 to link #11 once that number existed.
 
 **Draft PR #12** has both commits and this log.
+
+## 3. Is a 5k-line lockfile normal?
+
+> **User:** The frontend/package-lock.json is much bigger than i had anticipated, is it normal that
+> its 5k LoC long?
+
+**Agent:** Counted the packages in the lockfile instead of answering from general knowledge:
+
+```
+5581 package-lock.json
+packages: 364 dev-only: 310 prod: 54 (of which optional platform binaries: 38 )
+eslint-config-next      292 packages
+eslint                   85 packages
+next                     53 packages
+```
+
+**Answer:** yes, and it's small for a Next.js app.
+
+- Each entry is about 14 lines: version, URL, integrity hash and dependencies.
+- 310 of the 364 packages are lint tooling, mostly from `eslint-config-next`.
+- Only 54 are production packages, and 38 of those are per-platform binaries where npm installs just
+  the one matching the machine.
+- The lockfile only records what `package.json` already declared; it doesn't add dependencies.
+
+The agent advised against trimming the lint setup just to shrink the file. Nothing changed.
+
+## 4. Syncing with `main`
+
+> **User:** okay, actually there was a change in main for github CI and a new Cluade.md file, can
+> you get the latest changes?
+
+**Agent:** Fetched `origin/main` and found one new commit, PR #7. It added GitHub Actions CI, a new
+`CLAUDE.md` with session-log rules, and `session_logs/3-github-actions-ci.md`. Then:
+
+- **Merged rather than rebased,** because the branch already had an open PR and a rebase would need
+  a force-push.
+- **Renumbered this log from 3 to 4.** The new `CLAUDE.md` says to take one more than the highest
+  number across `main` and open PR branches, and `main` now had a log 3. PR #12 was the only open PR.
+- **Followed the "one log per session" rule** by updating this file rather than starting a new one.
+- **Switched the CI frontend job to `npm ci`**, with npm caching keyed on the lockfile. The workflow
+  used `npm install` because `main` had no lockfile when it was written. With this PR's lockfile,
+  `npm ci` installs exactly the locked versions and fails if the lockfile and `package.json`
+  disagree.
+- **Checked the log against the redaction rule.** The only secret-like string is
+  `dev-secret-change-me`, the public placeholder in `config.py` that the finding is about.
 
 ---
 

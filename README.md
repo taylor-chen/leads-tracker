@@ -13,14 +13,18 @@ See [`docs/system-design.md`](docs/system-design.md) for the architecture, data 
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Compose v2), running.
+- `make` (preinstalled on macOS/Linux).
 
 Nothing else is needed on the host. Python and Node run inside containers.
 
 ## Run it
 
 ```bash
-docker compose up --build        # add -d to run in the background
+make up          # build and start everything in the background
+make logs        # follow logs (Ctrl-C to stop following); SERVICE=backend for one service
 ```
+
+Run `make` on its own to list every command.
 
 The first build takes a few minutes. Once it's up:
 
@@ -37,25 +41,21 @@ On startup the backend runs DB migrations and creates a default attorney login:
 - **Password:** `changeme123`
 
 To change these or the notification recipient, copy `.env.example` to `.env` and edit it before
-`docker compose up`.
+`make up`.
 
 ### Stop it
 
 ```bash
-docker compose down              # stop containers, keep data
-docker compose down -v           # stop and delete all data (database + uploaded resumes)
+make down        # stop containers, keep data
+make reset       # stop and delete all data (database + uploaded resumes)
 ```
 
-### Useful commands
+### Other commands
 
 ```bash
-docker compose logs -f backend   # tail backend logs
-docker compose ps                # service status
-docker compose exec backend python -m app.cli create-user \
-  --email jane@example.com --password 'a-strong-password' --name "Jane Doe"   # add another attorney
+make ps          # service status
+make create-user EMAIL=jane@example.com PASSWORD=a-strong-pw NAME="Jane Doe"   # add an attorney
 ```
-
-A `Makefile` wraps the common ones: `make up`, `make down`, `make reset`, `make logs`, `make test`.
 
 ## Manual E2E walkthrough
 
@@ -85,26 +85,14 @@ curl -X PATCH -H "Authorization: Bearer $TOKEN" -H 'content-type: application/js
 
 ## Running the tests
 
-**Backend** (pytest; uses in-memory SQLite and a captured email outbox, so the stack doesn't need
-to be running):
-
 ```bash
-docker compose build backend
-docker compose run --rm --no-deps backend pytest
-docker compose run --rm --no-deps backend ruff check .      # lint
+make test            # everything below
+make test-backend    # pytest (in-memory SQLite + captured email outbox; stack needn't be running)
+make test-frontend   # TypeScript type-check + ESLint in a throwaway Node container
+make lint            # ruff (backend) + ESLint (frontend)
 ```
 
-**Frontend** (type-check + lint in a throwaway Node container):
-
-```bash
-docker run --rm -v "$PWD/frontend:/app" -v /app/node_modules -w /app node:22-alpine \
-  sh -c "npm install --no-audit --no-fund && npm run typecheck && npm run lint"
-```
-
-The frontend Docker image also type-checks during `next build`, so `docker compose up --build`
-fails if there are type errors.
-
-Or run both with `make test`.
+The frontend image also type-checks during `next build`, so `make up` fails on type errors.
 
 ### Without Docker (optional)
 
@@ -120,29 +108,4 @@ cd frontend
 npm install
 npm run typecheck && npm run lint
 API_URL=http://localhost:8000 npm run dev
-```
-
-## Repository layout
-
-```
-backend/
-  app/
-    api/            # FastAPI routers (v1) and dependency wiring
-    core/           # settings, security (JWT/bcrypt), domain errors, logging
-    db/             # SQLAlchemy base + session
-    models/         # ORM models (Lead, User)
-    schemas/        # Pydantic request/response models
-    repositories/   # data access
-    services/       # business logic: leads, auth, notifications, email + storage adapters
-    cli.py          # admin commands (create-user, seed)
-  alembic/          # migrations
-  tests/
-frontend/
-  src/
-    app/            # pages (public form, login, leads dashboard) + route handlers proxying the API
-    components/     # client components (forms, buttons)
-    lib/            # server-side API client, session cookie helpers, types
-    middleware.ts   # guards /leads/*
-docs/system-design.md
-docker-compose.yml
 ```

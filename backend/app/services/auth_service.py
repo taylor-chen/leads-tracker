@@ -1,3 +1,4 @@
+import secrets
 import uuid
 
 from sqlalchemy.orm import Session
@@ -14,8 +15,10 @@ from app.core.security import (
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
 
-# Used to keep login timing similar whether or not the email exists.
-_DUMMY_HASH = hash_password("timing-equalizer")
+# Hash of a random throwaway value, checked when the email doesn't exist so that
+# login takes about as long for unknown emails as for known ones (prevents user
+# enumeration via timing). Nothing ever matches it, so it isn't a secret.
+_DUMMY_HASH = hash_password(secrets.token_urlsafe(32))
 
 
 class AuthService:

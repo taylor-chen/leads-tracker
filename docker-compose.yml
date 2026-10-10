@@ -32,9 +32,14 @@ services:
       UPLOAD_DIR: /data/uploads
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-in-production-please}
       CORS_ORIGINS: http://localhost:3000
-      EMAIL_BACKEND: smtp
-      SMTP_HOST: mailpit
-      SMTP_PORT: 1025
+      # SMTP defaults to the local Mailpit catcher. Override in .env to send real email.
+      EMAIL_BACKEND: ${EMAIL_BACKEND:-smtp}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_SSL: ${SMTP_USE_SSL:-false}
+      SMTP_STARTTLS: ${SMTP_STARTTLS:-false}
       EMAIL_FROM: ${EMAIL_FROM:-Leads Tracker <no-reply@leads.local>}
       ATTORNEY_NOTIFICATION_EMAIL: ${ATTORNEY_NOTIFICATION_EMAIL:-attorney@example.com}
       FRONTEND_BASE_URL: http://localhost:3000

@@ -1,4 +1,4 @@
-# Session log: building leads-tracker with Claude Code
+# Session log 1: building leads-tracker with Claude Code
 
 Representative excerpts from the Claude Code session that produced this repo (PR #1). User prompts
 are quoted verbatim. Agent responses and actions are condensed, and tool output is trimmed to the

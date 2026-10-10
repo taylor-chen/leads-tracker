@@ -5,14 +5,17 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 def utcnow() -> datetime:
+    """Current time as a timezone-aware UTC datetime."""
     return datetime.now(UTC)
 
 
 class Base(DeclarativeBase):
-    pass
+    """Declarative base for all ORM models; `Base.metadata` is what Alembic migrates."""
 
 
 class TimestampMixin:
+    """Adds `created_at` and `updated_at` columns, maintained automatically."""
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, nullable=False
     )

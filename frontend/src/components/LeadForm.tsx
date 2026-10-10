@@ -6,6 +6,11 @@ import { useState, type FormEvent } from "react";
 const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 
+/**
+ * Quick client-side check so obvious mistakes fail before uploading. The API re-validates
+ * (including file signatures), so keep these limits in sync with the backend.
+ * Returns an error message, or null if the file looks fine.
+ */
 function validateResume(file: File | null): string | null {
   if (!file || file.size === 0) return "Please attach your resume.";
   const name = file.name.toLowerCase();
@@ -16,6 +21,7 @@ function validateResume(file: File | null): string | null {
   return null;
 }
 
+/** Public lead form. Posts multipart data to /api/leads, then goes to /thank-you. */
 export function LeadForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +55,7 @@ export function LeadForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="form" noValidate={false}>
+    <form onSubmit={handleSubmit} className="form">
       <div className="form-row">
         <label>
           First name

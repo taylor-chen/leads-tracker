@@ -10,7 +10,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     app_name: str = "Leads Tracker API"
-    environment: Literal["local", "test", "staging", "production"] = "local"
     log_level: str = "INFO"
 
     database_url: str = "sqlite:///./leads.db"
@@ -45,9 +44,11 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
+        """`cors_origins` split into a list, ignoring blanks."""
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 
 @lru_cache
 def get_settings() -> Settings:
+    """Return the process-wide settings. Tests override this via FastAPI dependencies."""
     return Settings()

@@ -41,6 +41,7 @@ _bearer = HTTPBearer(auto_error=False)
 def get_bearer_token(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
 ) -> str:
+    """Return the raw bearer token from the Authorization header, or raise 401."""
     if credentials is None:
         raise AuthenticationError("Not authenticated")
     return credentials.credentials
@@ -52,6 +53,7 @@ BearerToken = Annotated[str, Depends(get_bearer_token)]
 def get_current_user(
     auth: Annotated[AuthService, Depends(get_auth_service)], token: BearerToken
 ) -> User:
+    """Resolve the bearer token to its user. Add `CurrentUser` to protect a route."""
     return auth.user_from_token(token)
 
 

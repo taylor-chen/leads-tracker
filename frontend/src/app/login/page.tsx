@@ -1,5 +1,6 @@
 import { LoginForm } from "@/components/LoginForm";
 
+/** Attorney sign-in. `?next=` is where to go after; the other params pick a notice. */
 export default async function LoginPage({
   searchParams,
 }: {

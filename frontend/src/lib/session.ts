@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 
 export const SESSION_COOKIE = "leads_session";
 
+/** Options for setting (or, with `maxAge: 0`, clearing) the session cookie. */
 export const sessionCookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
@@ -12,14 +13,7 @@ export const sessionCookieOptions = {
   path: "/",
 };
 
+/** The API bearer token stored in the session cookie, if any. */
 export async function getSessionToken(): Promise<string | undefined> {
   return (await cookies()).get(SESSION_COOKIE)?.value;
-}
-
-/** Only allow same-site relative redirects, to avoid open redirects via `?next=`. */
-export function safeNextPath(next: string | null | undefined, fallback = "/leads"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) {
-    return fallback;
-  }
-  return next;
 }

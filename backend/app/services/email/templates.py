@@ -16,6 +16,7 @@ class LeadEmailContext:
 
 
 def prospect_confirmation(ctx: LeadEmailContext) -> EmailMessage:
+    """Email thanking the prospect for their submission."""
     text = (
         f"Hi {ctx.first_name},\n\n"
         "Thanks for reaching out. We've received your information and resume. "
@@ -34,6 +35,10 @@ def prospect_confirmation(ctx: LeadEmailContext) -> EmailMessage:
 def attorney_notification(
     ctx: LeadEmailContext, *, to: str, frontend_base_url: str
 ) -> EmailMessage:
+    """Email telling the attorney about a new lead, linking to it in the dashboard.
+
+    Reply-To is the prospect, so the attorney can answer them directly.
+    """
     full_name = f"{ctx.first_name} {ctx.last_name}"
     link = f"{frontend_base_url.rstrip('/')}/leads/{ctx.lead_id}"
     text = (

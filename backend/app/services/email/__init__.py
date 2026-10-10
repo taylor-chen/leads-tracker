@@ -5,6 +5,7 @@ from app.services.email.smtp import SmtpEmailSender
 
 
 def build_email_sender(settings: Settings) -> EmailSender:
+    """Return the sender selected by `EMAIL_BACKEND`."""
     if settings.email_backend == "smtp":
         return SmtpEmailSender(settings)
     return ConsoleEmailSender()

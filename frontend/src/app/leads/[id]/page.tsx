@@ -9,6 +9,7 @@ import type { Lead } from "@/lib/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Fetch a lead, showing the 404 page for a malformed or unknown id. */
 async function loadLead(id: string): Promise<Lead> {
   if (!UUID_RE.test(id)) notFound();
   try {
@@ -19,6 +20,7 @@ async function loadLead(id: string): Promise<Lead> {
   }
 }
 
+/** Full details of one lead, with its resume link and the reached-out action. */
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const lead = await loadLead(id);

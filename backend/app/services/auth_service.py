@@ -29,6 +29,7 @@ MAX_PASSWORD_BYTES = 72
 
 
 def validate_password_policy(password: str) -> None:
+    """Raise `ValidationError` if `password` is too short or too long for bcrypt."""
     if len(password) < MIN_PASSWORD_LENGTH:
         raise ValidationError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
     if len(password.encode()) > MAX_PASSWORD_BYTES:
@@ -36,6 +37,12 @@ def validate_password_policy(password: str) -> None:
 
 
 class AuthService:
+    """Sign-in, token checks, logout, password changes and user creation.
+
+    A token is accepted only if it is validly signed and unexpired, its `jti` hasn't been
+    revoked, and its version matches the user's current `token_version`.
+    """
+
     def __init__(self, db: Session, settings: Settings) -> None:
         self.db = db
         self.settings = settings
@@ -43,6 +50,10 @@ class AuthService:
         self.revoked = RevokedTokenRepository(db)
 
     def authenticate(self, email: str, password: str) -> tuple[str, int]:
+        """Check credentials and return a new access token and its lifetime in seconds.
+
+        Unknown email, wrong password and inactive user all fail with the same message.
+        """
         user = self.users.get_by_email(email)
         if user is None:
             verify_password(password, _DUMMY_HASH)
@@ -52,6 +63,7 @@ class AuthService:
         return create_access_token(str(user.id), user.token_version, self.settings)
 
     def user_from_token(self, token: str) -> User:
+        """Return the active user `token` belongs to, or raise `AuthenticationError`."""
         claims = self._valid_claims(token)
         user = self.users.get(uuid.UUID(claims.subject))
         if user is None or not user.is_active or claims.version != user.token_version:
@@ -77,6 +89,7 @@ class AuthService:
         self.db.commit()
 
     def _valid_claims(self, token: str) -> TokenClaims:
+        """Decode `token` and reject it if malformed, expired or revoked."""
         try:
             claims = decode_access_token(token, self.settings)
             uuid.UUID(claims.subject)
@@ -87,6 +100,7 @@ class AuthService:
         return claims
 
     def create_user(self, *, email: str, password: str, full_name: str) -> User:
+        """Create an attorney account. Used by the CLI and tests; there is no signup API."""
         validate_password_policy(password)
         if self.users.get_by_email(email) is not None:
             raise ValidationError("A user with this email already exists")

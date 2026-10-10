@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { backendFetch } from "@/lib/backend";
 import { SESSION_COOKIE, getSessionToken, sessionCookieOptions } from "@/lib/session";
 
+/** Signs out: revokes the API token, clears the cookie and redirects to /login. */
 export async function POST(request: Request) {
   // Revoke the token server-side so a copied token stops working too. The cookie is cleared
   // regardless, so a failed or unreachable API never leaves the user stuck signed in.

@@ -8,6 +8,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/login", response_model=TokenResponse)
 def login(body: LoginRequest, auth: AuthServiceDep) -> TokenResponse:
+    """Exchange email and password for a bearer token."""
     token, expires_in = auth.authenticate(body.email, body.password)
     return TokenResponse(access_token=token, expires_in=expires_in)
 
@@ -21,6 +22,7 @@ def logout(token: BearerToken, auth: AuthServiceDep) -> Response:
 
 @router.get("/me", response_model=UserRead)
 def me(user: CurrentUser) -> UserRead:
+    """Return the signed-in user."""
     return UserRead.model_validate(user)
 
 

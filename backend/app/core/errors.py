@@ -10,26 +10,36 @@ class DomainError(Exception):
 
 
 class NotFoundError(DomainError):
+    """The requested resource doesn't exist."""
+
     status_code = 404
     code = "not_found"
 
 
 class ValidationError(DomainError):
+    """Input failed a business rule (not to be confused with pydantic's ValidationError)."""
+
     status_code = 422
     code = "validation_error"
 
 
 class PayloadTooLargeError(DomainError):
+    """An upload exceeded its size limit."""
+
     status_code = 413
     code = "payload_too_large"
 
 
 class InvalidStateTransitionError(DomainError):
+    """A lead state change not allowed by `LEAD_STATE_TRANSITIONS`."""
+
     status_code = 409
     code = "invalid_state_transition"
 
 
 class AuthenticationError(DomainError):
+    """Missing, invalid, expired or revoked credentials. Sent with `WWW-Authenticate`."""
+
     status_code = 401
     code = "not_authenticated"
 

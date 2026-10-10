@@ -48,6 +48,7 @@ def list_leads(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> LeadPage:
+    """List leads newest first, optionally filtered by state."""
     items, total = service.list_leads(state=state, page=page, page_size=page_size)
     return LeadPage(
         items=[LeadRead.from_model(lead) for lead in items],
@@ -59,6 +60,7 @@ def list_leads(
 
 @router.get("/{lead_id}", response_model=LeadRead)
 def get_lead(lead_id: uuid.UUID, service: LeadServiceDep, _: CurrentUser) -> LeadRead:
+    """Return one lead."""
     return LeadRead.from_model(service.get_lead(lead_id))
 
 
@@ -66,11 +68,13 @@ def get_lead(lead_id: uuid.UUID, service: LeadServiceDep, _: CurrentUser) -> Lea
 def update_lead(
     lead_id: uuid.UUID, body: LeadUpdate, service: LeadServiceDep, user: CurrentUser
 ) -> LeadRead:
+    """Change a lead's state (PENDING → REACHED_OUT), recording who did it."""
     return LeadRead.from_model(service.update_lead(lead_id, body, actor=user))
 
 
 @router.get("/{lead_id}/resume", response_class=FileResponse)
 def download_resume(lead_id: uuid.UUID, service: LeadServiceDep, _: CurrentUser) -> FileResponse:
+    """Download the lead's resume under its original filename."""
     lead = service.get_lead(lead_id)
     return FileResponse(
         service.resume_path(lead),

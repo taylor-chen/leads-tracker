@@ -4,11 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { backendFetch, errorMessage } from "@/lib/backend";
+import type { ActionResult } from "@/lib/types";
 
-export interface ActionResult {
-  error?: string;
-}
-
+/** Server action: move a lead to REACHED_OUT and refresh the pages that show it. */
 export async function markReachedOut(leadId: string): Promise<ActionResult> {
   const res = await backendFetch(`/api/v1/leads/${encodeURIComponent(leadId)}`, {
     method: "PATCH",

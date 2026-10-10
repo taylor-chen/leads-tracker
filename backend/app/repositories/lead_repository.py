@@ -7,6 +7,8 @@ from app.models.lead import Lead, LeadState
 
 
 class LeadRepository:
+    """Database access for leads. Flushes but never commits; the service owns transactions."""
+
     def __init__(self, db: Session) -> None:
         self.db = db
 
@@ -19,6 +21,7 @@ class LeadRepository:
         return self.db.get(Lead, lead_id)
 
     def list(self, *, state: LeadState | None, offset: int, limit: int) -> tuple[list[Lead], int]:
+        """Return one page of leads, newest first, and the total matching `state`."""
         query = select(Lead)
         count_query = select(func.count()).select_from(Lead)
         if state is not None:

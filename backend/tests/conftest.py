@@ -24,7 +24,6 @@ ATTORNEY_PASSWORD = "s3cret-password"
 @pytest.fixture
 def settings(tmp_path) -> Settings:
     return Settings(
-        environment="test",
         database_url="sqlite://",
         upload_dir=str(tmp_path / "uploads"),
         jwt_secret="test-secret-that-is-at-least-32-bytes-long",

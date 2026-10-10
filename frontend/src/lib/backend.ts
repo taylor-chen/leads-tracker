@@ -7,6 +7,7 @@ import { getSessionToken } from "@/lib/session";
 /** Base URL of the FastAPI service, reachable from the Next.js server only. */
 const API_URL = process.env.API_URL ?? "http://localhost:8000";
 
+/** A non-2xx response from the API, other than a 401 (which redirects to login). */
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -16,6 +17,7 @@ export class ApiError extends Error {
   }
 }
 
+/** Best-effort human-readable message from an API error response. */
 export async function errorMessage(res: Response): Promise<string> {
   try {
     const body = await res.json();

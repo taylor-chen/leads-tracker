@@ -1,3 +1,5 @@
+// Mirrors the API's response schemas in backend/app/schemas.
+
 export type LeadState = "PENDING" | "REACHED_OUT";
 
 export const LEAD_STATES: LeadState[] = ["PENDING", "REACHED_OUT"];
@@ -37,6 +39,12 @@ export interface LeadPage {
   page_size: number;
 }
 
+/** Return value of a server action used with `useActionState`: empty on success. */
+export interface ActionResult {
+  error?: string;
+}
+
+/** Narrow an untrusted value (e.g. a query param) to a `LeadState`. */
 export function isLeadState(value: unknown): value is LeadState {
   return typeof value === "string" && (LEAD_STATES as string[]).includes(value);
 }

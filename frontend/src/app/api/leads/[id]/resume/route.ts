@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { loginPath } from "@/lib/auth";
 import { backendFetch, errorMessage } from "@/lib/backend";
 import { redirectToPath } from "@/lib/redirect";
 
@@ -9,7 +10,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const res = await backendFetch(`/api/v1/leads/${encodeURIComponent(id)}/resume`);
 
   if (res.status === 401) {
-    return redirectToPath("/login", { expired: "1", next: `/leads/${id}` });
+    return redirectToPath(loginPath(`/leads/${id}`, { expired: true }));
   }
   if (!res.ok || !res.body) {
     return NextResponse.json(

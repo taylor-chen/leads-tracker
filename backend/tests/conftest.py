@@ -24,7 +24,6 @@ ATTORNEY_PASSWORD = "s3cret-password"
 @pytest.fixture
 def settings(tmp_path) -> Settings:
     return Settings(
-        environment="test",
         database_url="sqlite://",
         upload_dir=str(tmp_path / "uploads"),
         jwt_secret="test-secret-that-is-at-least-32-bytes-long",
@@ -78,13 +77,16 @@ def attorney(db, settings):
     )
 
 
-@pytest.fixture
-def auth_headers(client, attorney) -> dict[str, str]:
-    res = client.post(
-        "/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": ATTORNEY_PASSWORD}
-    )
+def login_headers(client: TestClient, password: str = ATTORNEY_PASSWORD) -> dict[str, str]:
+    """Sign in as the attorney. Each call starts a new session with its own token."""
+    res = client.post("/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": password})
     assert res.status_code == 200, res.text
     return {"Authorization": f"Bearer {res.json()['access_token']}"}
+
+
+@pytest.fixture
+def auth_headers(client, attorney) -> dict[str, str]:
+    return login_headers(client)
 
 
 def submit_lead(client: TestClient, **overrides):

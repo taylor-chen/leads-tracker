@@ -10,6 +10,10 @@ from app.core.logging import configure_logging
 
 
 def create_app() -> FastAPI:
+    """Build the FastAPI app: CORS, error handlers, health check and the v1 API.
+
+    Every error response has the shape `{"error": {"code": ..., "message": ...}}`.
+    """
     settings = get_settings()
     configure_logging(settings.log_level)
 
@@ -33,6 +37,7 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(RequestValidationError)
     async def handle_request_validation(_: Request, exc: RequestValidationError) -> JSONResponse:
+        """Report only the first validation error, as "field: message"."""
         first = exc.errors()[0] if exc.errors() else {"loc": [], "msg": "Invalid request"}
         field = ".".join(str(p) for p in first["loc"] if p not in ("body", "query", "path"))
         message = f"{field}: {first['msg']}" if field else first["msg"]

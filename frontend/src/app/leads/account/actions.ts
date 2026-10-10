@@ -3,10 +3,15 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import type { ActionResult } from "@/app/leads/actions";
+import { SESSION_COOKIE, loginPath } from "@/lib/auth";
 import { backendFetch } from "@/lib/backend";
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
+import { sessionCookieOptions } from "@/lib/session";
+import type { ActionResult } from "@/lib/types";
 
+/**
+ * Server action for ChangePasswordForm. On success the API has signed out every session,
+ * so this clears the cookie and sends the user to sign in with the new password.
+ */
 export async function changePassword(_prev: ActionResult, form: FormData): Promise<ActionResult> {
   const currentPassword = String(form.get("current_password") ?? "");
   const newPassword = String(form.get("new_password") ?? "");
@@ -28,7 +33,7 @@ export async function changePassword(_prev: ActionResult, form: FormData): Promi
     const error: { code?: string; message?: string } | undefined = body?.error;
     // A wrong current password is also a 401; only a missing/expired session goes to login.
     if (res.status === 401 && error?.code !== "invalid_current_password") {
-      redirect(`/login?expired=1&next=${encodeURIComponent("/leads/account")}`);
+      redirect(loginPath("/leads/account", { expired: true }));
     }
     return { error: error?.message ?? "Could not change password" };
   }

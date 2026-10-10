@@ -36,6 +36,12 @@ def validate_password_policy(password: str) -> None:
 
 
 class AuthService:
+    """Sign-in, token checks, logout, password changes and user creation.
+
+    A token is accepted only if it is validly signed and unexpired, its `jti` hasn't been
+    revoked, and its version matches the user's current `token_version`.
+    """
+
     def __init__(self, db: Session, settings: Settings) -> None:
         self.db = db
         self.settings = settings
@@ -43,6 +49,10 @@ class AuthService:
         self.revoked = RevokedTokenRepository(db)
 
     def authenticate(self, email: str, password: str) -> tuple[str, int]:
+        """Check credentials and return a new access token and its lifetime in seconds.
+
+        Unknown email, wrong password and inactive user all fail with the same message.
+        """
         user = self.users.get_by_email(email)
         if user is None:
             verify_password(password, _DUMMY_HASH)
@@ -87,6 +97,7 @@ class AuthService:
         return claims
 
     def create_user(self, *, email: str, password: str, full_name: str) -> User:
+        """Create an attorney account. Used by the CLI and tests; there is no signup API."""
         validate_password_policy(password)
         if self.users.get_by_email(email) is not None:
             raise ValidationError("A user with this email already exists")

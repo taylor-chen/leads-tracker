@@ -27,6 +27,7 @@ def create_user(email: str, password: str, name: str) -> None:
 
 
 def seed() -> None:
+    """Create the SEED_ATTORNEY_* user if it's configured and doesn't exist yet. Idempotent."""
     settings = get_settings()
     if not (settings.seed_attorney_email and settings.seed_attorney_password):
         logger.info("No SEED_ATTORNEY_EMAIL/PASSWORD configured; skipping seed")

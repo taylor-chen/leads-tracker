@@ -9,14 +9,6 @@ import { NextResponse } from "next/server";
  * Route handlers only: middleware rejects a relative `Location`, and already relativizes
  * same-origin redirects itself.
  */
-export function redirectToPath(
-  path: string,
-  params: Record<string, string> = {},
-  status: 303 | 307 = 307,
-): NextResponse {
-  const query = new URLSearchParams(params).toString();
-  return new NextResponse(null, {
-    status,
-    headers: { Location: query ? `${path}?${query}` : path },
-  });
+export function redirectToPath(path: string, status: 303 | 307 = 307): NextResponse {
+  return new NextResponse(null, { status, headers: { Location: path } });
 }

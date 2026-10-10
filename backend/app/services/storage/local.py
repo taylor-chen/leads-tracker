@@ -8,6 +8,8 @@ from app.services.storage.base import StorageBackend
 
 
 class LocalStorage(StorageBackend):
+    """Stores files on local disk under `root`. Keys can't resolve to paths outside it."""
+
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)

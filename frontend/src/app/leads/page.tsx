@@ -8,6 +8,7 @@ import { LEAD_STATE_LABELS, LEAD_STATES, isLeadState, type LeadPage } from "@/li
 
 const PAGE_SIZE = 20;
 
+/** URL of the leads list for a filter and page, omitting defaults. */
 function leadsHref(params: { state?: string; page?: number }): string {
   const qs = new URLSearchParams();
   if (params.state) qs.set("state", params.state);
@@ -16,6 +17,10 @@ function leadsHref(params: { state?: string; page?: number }): string {
   return query ? `/leads?${query}` : "/leads";
 }
 
+/**
+ * Attorney dashboard: paginated leads table with state filter tabs. Filter and page come
+ * from the query string; an unknown state shows all leads.
+ */
 export default async function LeadsPage({
   searchParams,
 }: {

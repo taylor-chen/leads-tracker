@@ -27,7 +27,6 @@ services:
   backend:
     build: ./backend
     environment:
-      ENVIRONMENT: ${ENVIRONMENT:-local}
       DATABASE_URL: postgresql+psycopg://leads:leads@postgres:5432/leads
       UPLOAD_DIR: /data/uploads
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-in-production-please}

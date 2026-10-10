@@ -1,14 +1,12 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Form, Query, status
 from fastapi.responses import FileResponse
-from pydantic import ValidationError as PydanticValidationError
 
 from app.api.deps import CurrentUser, EmailSenderDep, LeadServiceDep, SettingsDep
-from app.core.errors import ValidationError
 from app.models.lead import LeadState
-from app.schemas.lead import LeadCreate, LeadPage, LeadRead, LeadSubmitted, LeadUpdate
+from app.schemas.lead import LeadPage, LeadRead, LeadSubmission, LeadSubmitted, LeadUpdate
 from app.services.notifications import send_lead_submitted_emails
 
 router = APIRouter(prefix="/leads", tags=["leads"])
@@ -20,20 +18,10 @@ def create_lead(
     service: LeadServiceDep,
     email_sender: EmailSenderDep,
     settings: SettingsDep,
-    first_name: Annotated[str, Form()],
-    last_name: Annotated[str, Form()],
-    email: Annotated[str, Form()],
-    resume: Annotated[UploadFile, File(description="PDF, DOC or DOCX, up to 5 MB")],
+    form: Annotated[LeadSubmission, Form()],
 ) -> LeadSubmitted:
     """Public endpoint: submit a lead with a resume. Sends emails to the prospect and attorney."""
-    try:
-        data = LeadCreate(first_name=first_name, last_name=last_name, email=email)
-    except PydanticValidationError as exc:
-        first = exc.errors()[0]
-        field = ".".join(str(p) for p in first["loc"])
-        raise ValidationError(f"{field}: {first['msg']}") from exc
-
-    lead = service.create_lead(data, resume.file, resume.filename)
+    lead = service.create_lead(form, form.resume.file, form.resume.filename)
     background_tasks.add_task(
         send_lead_submitted_emails, email_sender, settings, service.email_context(lead)
     )
@@ -48,6 +36,7 @@ def list_leads(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 20,
 ) -> LeadPage:
+    """List leads newest first, optionally filtered by state."""
     items, total = service.list_leads(state=state, page=page, page_size=page_size)
     return LeadPage(
         items=[LeadRead.from_model(lead) for lead in items],
@@ -66,6 +55,7 @@ def get_lead(lead_id: uuid.UUID, service: LeadServiceDep, _: CurrentUser) -> Lea
 def update_lead(
     lead_id: uuid.UUID, body: LeadUpdate, service: LeadServiceDep, user: CurrentUser
 ) -> LeadRead:
+    """Change a lead's state (PENDING → REACHED_OUT), recording who did it."""
     return LeadRead.from_model(service.update_lead(lead_id, body, actor=user))
 
 

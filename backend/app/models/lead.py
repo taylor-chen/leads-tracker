@@ -10,6 +10,8 @@ from app.models.user import User
 
 
 class LeadState(enum.StrEnum):
+    """Where a lead is in the intake workflow."""
+
     PENDING = "PENDING"
     REACHED_OUT = "REACHED_OUT"
 
@@ -22,6 +24,12 @@ LEAD_STATE_TRANSITIONS: dict[LeadState, set[LeadState]] = {
 
 
 class Lead(TimestampMixin, Base):
+    """A prospect who submitted the public form, with their uploaded resume.
+
+    The resume file itself lives in storage under `resume_key`; the other `resume_*`
+    columns describe it. `reached_out_*` record who moved the lead to REACHED_OUT, and when.
+    """
+
     __tablename__ = "leads"
     # Listing is ordered newest-first.
     __table_args__ = (Index("ix_leads_created_at", "created_at"),)

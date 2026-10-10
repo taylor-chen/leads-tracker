@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 
 import { markReachedOut } from "@/app/leads/actions";
 
+/** Asks for confirmation, then marks the lead REACHED_OUT, showing any error inline. */
 export function MarkReachedOutButton({ leadId, leadName }: { leadId: string; leadName: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +19,7 @@ export function MarkReachedOutButton({ leadId, leadName }: { leadId: string; lea
   }
 
   return (
-    <span className="inline-action">
+    <span>
       <button type="button" className="small" onClick={handleClick} disabled={pending}>
         {pending ? "Saving…" : "Mark reached out"}
       </button>

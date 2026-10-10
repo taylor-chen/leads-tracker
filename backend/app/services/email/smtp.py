@@ -12,6 +12,11 @@ class SmtpEmailSender(EmailSender):
         self.settings = settings
 
     def send(self, message: EmailMessage) -> None:
+        """Build a text (plus optional HTML) MIME message and send it over a new connection.
+
+        Uses implicit TLS when `SMTP_USE_SSL` is set, otherwise plain SMTP upgraded with
+        STARTTLS if `SMTP_STARTTLS` is set. Logs in only when both credentials are set.
+        """
         mime = MimeMessage()
         mime["From"] = self.settings.email_from
         mime["To"] = message.to

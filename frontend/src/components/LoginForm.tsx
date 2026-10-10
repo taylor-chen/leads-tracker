@@ -3,10 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-function safeNext(next: string | undefined): string {
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/leads";
-}
+import { safeNextPath } from "@/lib/auth";
 
+/** Sign-in form. On success, goes to `next` if it's a safe same-site path, else /leads. */
 export function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +27,7 @@ export function LoginForm({ next }: { next?: string }) {
         setError(body?.error?.message ?? "Sign in failed");
         return;
       }
-      router.replace(safeNext(next));
+      router.replace(safeNextPath(next));
       router.refresh();
     } catch {
       setError("Network error. Please try again.");

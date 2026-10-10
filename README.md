@@ -40,6 +40,8 @@ On startup the backend runs DB migrations and creates a default attorney login:
 - **Email:** `attorney@example.com`
 - **Password:** `changeme123`
 
+Change it after signing in from **Account** in the dashboard's top bar.
+
 To change these or the notification recipient, copy `.env.example` to `.env` and edit it before
 `make up`. The same file holds the SMTP settings: they default to Mailpit, and `.env.example`
 shows how to point them at a real provider (Resend) to send real email.

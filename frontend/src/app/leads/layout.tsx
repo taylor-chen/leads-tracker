@@ -14,6 +14,7 @@ export default async function LeadsLayout({ children }: { children: React.ReactN
         </Link>
         <div className="topbar-right">
           <span className="muted">{me.full_name}</span>
+          <Link href="/leads/account">Account</Link>
           <form action="/api/auth/logout" method="post">
             <button type="submit" className="link-button">
               Sign out

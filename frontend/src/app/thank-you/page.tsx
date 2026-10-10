@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-/** Shown after a lead is submitted. */
 export default function ThankYouPage() {
   return (
     <main className="container narrow">

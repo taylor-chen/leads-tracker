@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-/** App-wide 404 page. */
 export default function NotFound() {
   return (
     <main className="container narrow">

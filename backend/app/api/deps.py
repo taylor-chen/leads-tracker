@@ -41,7 +41,6 @@ _bearer = HTTPBearer(auto_error=False)
 def get_bearer_token(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
 ) -> str:
-    """Return the raw bearer token from the Authorization header, or raise 401."""
     if credentials is None:
         raise AuthenticationError("Not authenticated")
     return credentials.credentials

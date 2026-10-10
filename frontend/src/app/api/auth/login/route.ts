@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { SESSION_COOKIE } from "@/lib/auth";
 import { backendFetch, errorMessage } from "@/lib/backend";
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
+import { sessionCookieOptions } from "@/lib/session";
 
 interface TokenResponse {
   access_token: string;

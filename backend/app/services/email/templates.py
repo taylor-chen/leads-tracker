@@ -16,7 +16,6 @@ class LeadEmailContext:
 
 
 def prospect_confirmation(ctx: LeadEmailContext) -> EmailMessage:
-    """Email thanking the prospect for their submission."""
     text = (
         f"Hi {ctx.first_name},\n\n"
         "Thanks for reaching out. We've received your information and resume. "

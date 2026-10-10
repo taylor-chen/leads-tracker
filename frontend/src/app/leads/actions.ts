@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { loginPath } from "@/lib/auth";
 import { backendFetch, errorMessage } from "@/lib/backend";
 import type { ActionResult } from "@/lib/types";
 
@@ -15,7 +16,7 @@ export async function markReachedOut(leadId: string): Promise<ActionResult> {
   });
 
   if (res.status === 401) {
-    redirect(`/login?expired=1&next=${encodeURIComponent(`/leads/${leadId}`)}`);
+    redirect(loginPath(`/leads/${leadId}`, { expired: true }));
   }
   if (!res.ok) {
     return { error: await errorMessage(res) };

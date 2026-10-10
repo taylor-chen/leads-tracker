@@ -19,7 +19,6 @@ logger = logging.getLogger("app.cli")
 
 
 def create_user(email: str, password: str, name: str) -> None:
-    """Create an attorney account. Raises `DomainError` on a bad password or duplicate email."""
     with get_sessionmaker()() as db:
         user = AuthService(db, get_settings()).create_user(
             email=email, password=password, full_name=name
@@ -43,7 +42,6 @@ def seed() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Parse `argv` and run the command. Returns the process exit code."""
     configure_logging(get_settings().log_level)
     parser = argparse.ArgumentParser(prog="app.cli")
     sub = parser.add_subparsers(dest="command", required=True)

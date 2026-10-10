@@ -20,7 +20,9 @@ class LeadRepository:
     def get(self, lead_id: uuid.UUID) -> Lead | None:
         return self.db.get(Lead, lead_id)
 
-    def list(self, *, state: LeadState | None, offset: int, limit: int) -> tuple[list[Lead], int]:
+    def list_page(
+        self, *, state: LeadState | None, offset: int, limit: int
+    ) -> tuple[list[Lead], int]:
         """Return one page of leads, newest first, and the total matching `state`."""
         query = select(Lead)
         count_query = select(func.count()).select_from(Lead)

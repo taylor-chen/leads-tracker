@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { safeNextPath } from "@/lib/paths";
+import { safeNextPath } from "@/lib/auth";
 
 /** Sign-in form. On success, goes to `next` if it's a safe same-site path, else /leads. */
 export function LoginForm({ next }: { next?: string }) {

@@ -4,7 +4,7 @@ import jwt
 from sqlalchemy import select
 
 from app.models import RevokedToken
-from tests.conftest import ATTORNEY_EMAIL, ATTORNEY_PASSWORD
+from tests.conftest import ATTORNEY_EMAIL, ATTORNEY_PASSWORD, login_headers
 
 
 def test_login_and_me(client, attorney):
@@ -46,14 +46,6 @@ def test_health(client):
     assert client.get("/health").json() == {"status": "ok"}
 
 
-def _login(client) -> dict[str, str]:
-    res = client.post(
-        "/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": ATTORNEY_PASSWORD}
-    )
-    assert res.status_code == 200
-    return {"Authorization": f"Bearer {res.json()['access_token']}"}
-
-
 def test_logout_revokes_token(client, auth_headers):
     assert client.get("/api/v1/auth/me", headers=auth_headers).status_code == 200
 
@@ -65,7 +57,7 @@ def test_logout_revokes_token(client, auth_headers):
 
 
 def test_logout_only_revokes_that_session(client, attorney):
-    laptop, phone = _login(client), _login(client)
+    laptop, phone = login_headers(client), login_headers(client)
     assert client.post("/api/v1/auth/logout", headers=laptop).status_code == 204
     assert client.get("/api/v1/auth/me", headers=laptop).status_code == 401
     assert client.get("/api/v1/auth/me", headers=phone).status_code == 200
@@ -91,7 +83,7 @@ def test_logout_prunes_expired_revocations(client, attorney, db):
     db.add(RevokedToken(jti="old", expires_at=datetime.now(UTC) - timedelta(minutes=1)))
     db.commit()
 
-    assert client.post("/api/v1/auth/logout", headers=_login(client)).status_code == 204
+    assert client.post("/api/v1/auth/logout", headers=login_headers(client)).status_code == 204
 
     db.expire_all()
     remaining = db.scalars(select(RevokedToken.jti)).all()
@@ -117,16 +109,12 @@ def test_change_password(client, auth_headers):
         "/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": ATTORNEY_PASSWORD}
     )
     assert old.status_code == 401
-    new = client.post(
-        "/api/v1/auth/login", json={"email": ATTORNEY_EMAIL, "password": NEW_PASSWORD}
-    )
-    assert new.status_code == 200
-    headers = {"Authorization": f"Bearer {new.json()['access_token']}"}
+    headers = login_headers(client, password=NEW_PASSWORD)
     assert client.get("/api/v1/auth/me", headers=headers).status_code == 200
 
 
 def test_change_password_invalidates_existing_tokens(client, attorney):
-    laptop, phone = _login(client), _login(client)
+    laptop, phone = login_headers(client), login_headers(client)
 
     assert _change_password(client, laptop).status_code == 204
 
@@ -141,7 +129,7 @@ def test_change_password_wrong_current_password(client, auth_headers):
     assert res.json()["error"]["code"] == "invalid_current_password"
     # Nothing changed: the session and the old password still work.
     assert client.get("/api/v1/auth/me", headers=auth_headers).status_code == 200
-    assert _login(client)
+    assert login_headers(client)
 
 
 def test_change_password_requires_auth(client, attorney):

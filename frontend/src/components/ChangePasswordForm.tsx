@@ -4,7 +4,6 @@ import { useActionState } from "react";
 
 import { changePassword } from "@/app/leads/account/actions";
 
-/** Change-password form backed by the `changePassword` server action. */
 export function ChangePasswordForm() {
   const [state, formAction, pending] = useActionState(changePassword, {});
 

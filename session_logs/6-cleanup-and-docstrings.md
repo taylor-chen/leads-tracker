@@ -104,13 +104,78 @@ The agent left these for the user to decide. They're listed in the PR #14 descri
 7. Keep dev dependencies out of the production backend image.
 8. Pick one form pattern in the frontend: `useActionState` or hand-rolled `useState`.
 
+## 7. Review: fewer docstrings, and apply most proposals
+
+> **User:**
+> I think comments like """Return one lead.""" is a bit overkill when the return should be
+> straightforward, comments on 1 line methods are still okay if the return behavoir is more
+> complicated.
+> For the proposals:
+> 1. lets fix this
+> 2. can we easily put this is 1 place?
+> 3. lets refactor this
+> 4. i think this is fine
+> 5. lets fix
+> 6. can remove the duplicate test
+> 7. lets remove testing libs from production image
+> 8. can you elaborate?
+
+**Agent:**
+
+- **Docstrings.** Removed 36 that only restated the name or the return value, such as
+  `get_lead`, `me`, `hash_password`, `get_engine`, `StateBadge` and the page components. Kept the
+  ones that say something the code doesn't show at a glance: errors raised, ordering, idempotency,
+  side effects, `Reply-To`. All class docstrings stayed, except two error classes whose names
+  already say everything.
+- **1 + 2.** Yes, it was easy to put in one place. `lib/paths.ts` became `lib/auth.ts`, a module
+  with no `server-only` import, so middleware and client components can use it. It holds
+  `SESSION_COOKIE`, `safeNextPath` and a new `loginPath(next, { expired })`. That helper replaced
+  the hand-built `/login?…` URLs in `lib/backend.ts`, both server actions, the resume route and
+  the middleware. Middleware no longer keeps its own copy of the cookie name.
+- **3.** The first attempt, `data: Annotated[LeadCreate, Form()]` next to a separate `File`
+  param, failed 12 tests. FastAPI embeds the model once there's a second body param:
+
+  ```
+  422 {"error":{"code":"validation_error","message":"data: Field required"}}
+  ```
+
+  A quick prototype showed that putting the file *inside* the form model works. So a new
+  `LeadSubmission(LeadCreate)` schema adds `resume: UploadFile`, and the endpoint takes
+  `form: Annotated[LeadSubmission, Form()]`. The hand-written pydantic error mapping and two
+  imports are gone. The global handler produces the same `"field: message"` errors. The suite
+  also passed on FastAPI 0.115.0, the minimum in `pyproject.toml`, so the pin stays.
+- **5.** `LeadRepository.list` became `list_page`.
+- **6.** `_login` in `test_auth.py` duplicated the `auth_headers` fixture. Replaced both with a
+  `login_headers(client, password=...)` helper in `conftest.py`. The fixture calls it, and the
+  multi-session tests call it once per session.
+- **7.** The backend Dockerfile is now multi-stage: `base` (runtime deps), `test` (adds dev deps)
+  and `runtime` (the default target, so compose and `make up` are unchanged).
+  `make test-backend` and `make lint-backend` now build and run the `test` stage.
+- **8.** Explained in chat. Not changed.
+
+Verification:
+
+```
+make test-backend   → 38 passed          make lint-backend → All checks passed!
+runtime image       → pytest absent, ruff absent, httpx absent; user appuser
+runtime container   → migrations 0001–0003 applied, seed user created, /health {"status":"ok"}
+make test-frontend  → typecheck ok, ✔ No ESLint warnings or errors
+next build          → ✓ Compiled successfully, ƒ Middleware 34.2 kB
+```
+
+**Not verified:** still no full `make up` with a browser walkthrough. The login-redirect changes
+are covered by typecheck and build only.
+
 ---
 
 ## Takeaways
 
 - **An unused duplicate may be the better copy.** Before deleting it, compare it with the code
   that's actually in use.
-- **Shell globbing can fake a result.** "All 32 classes unused" was zsh expanding a glob, not a
-  real finding. A result that sweeping should be rechecked before acting on it.
 - **Keep removal separate from redesign.** Only provably dead code was removed. Anything that
   changes structure went into proposals.
+- **A docstring should add information.** If it restates the name or the return type, it's
+  noise. Keep docstrings for errors, ordering, idempotency and side effects.
+- **Prototype framework features before refactoring around them.** FastAPI form models looked
+  like a drop-in change, but they embed once a second body param exists. A five-line prototype
+  found the version that works.

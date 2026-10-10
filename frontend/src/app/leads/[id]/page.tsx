@@ -20,7 +20,6 @@ async function loadLead(id: string): Promise<Lead> {
   }
 }
 
-/** Full details of one lead, with its resume link and the reached-out action. */
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const lead = await loadLead(id);

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { SESSION_COOKIE } from "@/lib/auth";
 import { backendFetch } from "@/lib/backend";
-import { SESSION_COOKIE, getSessionToken, sessionCookieOptions } from "@/lib/session";
+import { getSessionToken, sessionCookieOptions } from "@/lib/session";
 
 /** Signs out: revokes the API token, clears the cookie and redirects to /login. */
 export async function POST(request: Request) {

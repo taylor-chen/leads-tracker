@@ -3,8 +3,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { SESSION_COOKIE, loginPath } from "@/lib/auth";
 import { backendFetch } from "@/lib/backend";
-import { SESSION_COOKIE, sessionCookieOptions } from "@/lib/session";
+import { sessionCookieOptions } from "@/lib/session";
 import type { ActionResult } from "@/lib/types";
 
 /**
@@ -32,7 +33,7 @@ export async function changePassword(_prev: ActionResult, form: FormData): Promi
     const error: { code?: string; message?: string } | undefined = body?.error;
     // A wrong current password is also a 401; only a missing/expired session goes to login.
     if (res.status === 401 && error?.code !== "invalid_current_password") {
-      redirect(`/login?expired=1&next=${encodeURIComponent("/leads/account")}`);
+      redirect(loginPath("/leads/account", { expired: true }));
     }
     return { error: error?.message ?? "Could not change password" };
   }

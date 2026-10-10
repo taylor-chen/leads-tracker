@@ -16,7 +16,6 @@ class InvalidTokenError(Exception):
 
 
 def hash_password(password: str) -> str:
-    """Return a salted bcrypt hash of `password`."""
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 

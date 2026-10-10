@@ -22,5 +22,4 @@ class RevokedTokenRepository:
             self.db.flush()
 
     def delete_expired(self, now: datetime) -> None:
-        """Drop revocations for tokens that have expired anyway."""
         self.db.execute(delete(RevokedToken).where(RevokedToken.expires_at < now))

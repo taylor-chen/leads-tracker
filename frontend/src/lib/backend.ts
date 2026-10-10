@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { loginPath } from "@/lib/auth";
 import { getSessionToken } from "@/lib/session";
 
 /** Base URL of the FastAPI service, reachable from the Next.js server only. */
@@ -17,7 +18,6 @@ export class ApiError extends Error {
   }
 }
 
-/** Best-effort human-readable message from an API error response. */
 export async function errorMessage(res: Response): Promise<string> {
   try {
     const body = await res.json();
@@ -51,7 +51,7 @@ export async function backendFetch(
 export async function backendJsonOrLogin<T>(path: string, returnTo: string): Promise<T> {
   const res = await backendFetch(path);
   if (res.status === 401) {
-    redirect(`/login?expired=1&next=${encodeURIComponent(returnTo)}`);
+    redirect(loginPath(returnTo, { expired: true }));
   }
   if (!res.ok) {
     throw new ApiError(res.status, await errorMessage(res));

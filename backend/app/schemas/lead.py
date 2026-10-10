@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+from fastapi import UploadFile
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.lead import LeadState
@@ -25,6 +26,12 @@ class LeadCreate(BaseModel):
     @classmethod
     def normalize_email(cls, value: str) -> str:
         return value.strip().lower()
+
+
+class LeadSubmission(LeadCreate):
+    """The public lead form as posted (multipart): the text fields plus the resume file."""
+
+    resume: UploadFile = Field(description="PDF, DOC or DOCX, up to 5 MB")
 
 
 class LeadUpdate(BaseModel):

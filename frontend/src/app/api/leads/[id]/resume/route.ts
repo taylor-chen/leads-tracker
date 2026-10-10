@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { loginPath } from "@/lib/auth";
 import { backendFetch, errorMessage } from "@/lib/backend";
 
 /** Authenticated: streams a lead's resume from the API using the session token. */
@@ -8,10 +9,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const res = await backendFetch(`/api/v1/leads/${encodeURIComponent(id)}/resume`);
 
   if (res.status === 401) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("expired", "1");
-    loginUrl.searchParams.set("next", `/leads/${id}`);
-    return NextResponse.redirect(loginUrl);
+    const login = loginPath(`/leads/${id}`, { expired: true });
+    return NextResponse.redirect(new URL(login, request.url));
   }
   if (!res.ok || !res.body) {
     return NextResponse.json(

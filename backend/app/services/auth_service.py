@@ -29,7 +29,6 @@ MAX_PASSWORD_BYTES = 72
 
 
 def validate_password_policy(password: str) -> None:
-    """Raise `ValidationError` if `password` is too short or too long for bcrypt."""
     if len(password) < MIN_PASSWORD_LENGTH:
         raise ValidationError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
     if len(password.encode()) > MAX_PASSWORD_BYTES:
@@ -63,7 +62,6 @@ class AuthService:
         return create_access_token(str(user.id), user.token_version, self.settings)
 
     def user_from_token(self, token: str) -> User:
-        """Return the active user `token` belongs to, or raise `AuthenticationError`."""
         claims = self._valid_claims(token)
         user = self.users.get(uuid.UUID(claims.subject))
         if user is None or not user.is_active or claims.version != user.token_version:
@@ -89,7 +87,6 @@ class AuthService:
         self.db.commit()
 
     def _valid_claims(self, token: str) -> TokenClaims:
-        """Decode `token` and reject it if malformed, expired or revoked."""
         try:
             claims = decode_access_token(token, self.settings)
             uuid.UUID(claims.subject)

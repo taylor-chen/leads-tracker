@@ -44,7 +44,6 @@ export interface ActionResult {
   error?: string;
 }
 
-/** Narrow an untrusted value (e.g. a query param) to a `LeadState`. */
 export function isLeadState(value: unknown): value is LeadState {
   return typeof value === "string" && (LEAD_STATES as string[]).includes(value);
 }

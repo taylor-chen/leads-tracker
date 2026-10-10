@@ -5,7 +5,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 def utcnow() -> datetime:
-    """Current time as a timezone-aware UTC datetime."""
     return datetime.now(UTC)
 
 

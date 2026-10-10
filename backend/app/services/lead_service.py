@@ -63,10 +63,10 @@ class LeadService:
         self, *, state: LeadState | None, page: int, page_size: int
     ) -> tuple[list[Lead], int]:
         """Return one page (1-based) of leads, newest first, and the total matching `state`."""
-        return self.leads.list(state=state, offset=(page - 1) * page_size, limit=page_size)
+        offset = (page - 1) * page_size
+        return self.leads.list_page(state=state, offset=offset, limit=page_size)
 
     def get_lead(self, lead_id: uuid.UUID) -> Lead:
-        """Return the lead or raise `NotFoundError`."""
         lead = self.leads.get(lead_id)
         if lead is None:
             raise NotFoundError("Lead not found")
@@ -102,7 +102,6 @@ class LeadService:
 
     @staticmethod
     def email_context(lead: Lead) -> LeadEmailContext:
-        """Snapshot the fields the notification emails need."""
         return LeadEmailContext(
             lead_id=str(lead.id),
             first_name=lead.first_name,

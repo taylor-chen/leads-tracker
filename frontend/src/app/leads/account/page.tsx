@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { ChangePasswordForm } from "@/components/ChangePasswordForm";
 
-/** Account settings for the signed-in attorney. Currently just password change. */
 export default function AccountPage() {
   return (
     <div className="narrow-section">

@@ -1,6 +1,5 @@
 import { LeadForm } from "@/components/LeadForm";
 
-/** Public landing page with the lead submission form. */
 export default function HomePage() {
   return (
     <main className="container narrow">

@@ -10,8 +10,6 @@ class DomainError(Exception):
 
 
 class NotFoundError(DomainError):
-    """The requested resource doesn't exist."""
-
     status_code = 404
     code = "not_found"
 
@@ -24,8 +22,6 @@ class ValidationError(DomainError):
 
 
 class PayloadTooLargeError(DomainError):
-    """An upload exceeded its size limit."""
-
     status_code = 413
     code = "payload_too_large"
 
